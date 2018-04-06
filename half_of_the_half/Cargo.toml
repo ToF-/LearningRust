@@ -1,0 +1,6 @@
+[package]
+name = "half_of_the_half"
+version = "0.1.0"
+authors = ["ToF <cthibaut@octo.com>"]
+
+[dependencies]

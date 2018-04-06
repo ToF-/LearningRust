@@ -1,0 +1,1 @@
+/Users/Christophe/dev/LearningRust/life_the_universe_and_everything/target/debug/liblife_the_universe_and_everything.rlib: /Users/Christophe/dev/LearningRust/life_the_universe_and_everything/src/lib.rs

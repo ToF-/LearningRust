@@ -5,7 +5,7 @@ fn main() {
     fn print_pattern(rows : u32, cols : u32) {
         for row in 0..rows {
             for col in 0..cols {
-                if  ((row%2) + (col%2))%2 == 0 {
+                if  (row + col)%2 == 0 {
                     print!("*")
                 }
                 else {

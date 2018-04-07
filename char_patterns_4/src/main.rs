@@ -1,12 +1,13 @@
 
 
+
 fn main() {
     use std::io;
 
-    fn print_pattern(rows : u32, cols : u32) {
-        for row in 0..rows*3+1 {
-            for col in 0..cols*3+1 {
-                if (row % 3 == 0) || (col % 3 == 0)  { 
+    fn print_pattern(rows : u32, cols : u32, height : u32, width : u32) {
+        for row in 0..rows*(height+1)+1 {
+            for col in 0..cols*(width+1)+1 {
+                if (row % (height+1) == 0) || (col % (width+1) == 0)  { 
                     print!("*")
                 }
                 else {
@@ -32,7 +33,7 @@ fn main() {
                 let inputs: Vec<u32> = line.trim().split(" ")
                     .map(|x| x.parse().expect("Not an integer!"))
                     .collect();
-                print_pattern(inputs[0], inputs[1]);
+                print_pattern(inputs[0], inputs[1],inputs[2],inputs[3]);
                 println!("")
             }
             Err(_) => {

@@ -9,20 +9,25 @@ fn main() {
                     print!("*")
                 }
                 else {
-                    let rel_row = row%size;
-                    let rel_col = col%size;
-                    if rel_row == rel_col {
-                        let squ_row = row/(size+1);
-                        let squ_col = col/(size+1);
-                        if (squ_row + squ_col)%2 == 0 {
+                    let squ_row = row/(size+1);
+                    let squ_col = col/(size+1);
+                    let rel_row = row%(size+1)-1;
+                    let rel_col = col%(size+1)-1;
+                    if (squ_row + squ_col)%2 == 0 {
+                        if rel_row == rel_col {
                             print!("\\")
                         }
                         else {
-                            print!("/")
+                            print!(".")
                         }
                     }
                     else {
-                        print!(".")
+                        if (rel_row) == (size-1-rel_col) {
+                            print!("/")
+                        }
+                        else {
+                            print!(".")
+                        }
                     }
                 }
             }

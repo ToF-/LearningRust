@@ -1,0 +1,6 @@
+[package]
+name = "char_patterns_3"
+version = "0.1.0"
+authors = ["ToF <cthibaut@octo.com>"]
+
+[dependencies]

@@ -1,6 +1,3 @@
-
-
-
 fn main() {
     use std::io;
 

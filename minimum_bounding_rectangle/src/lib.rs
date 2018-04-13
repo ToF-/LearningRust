@@ -55,13 +55,20 @@ mod tests {
                 let y:i32 = inputs[2].parse().expect("Not an integer!");
                 Shape::Point { point:Point { x:x, y:y }}
                 },
-            _   => {
+            "l" => {
                 let x0:i32 = inputs[1].parse().expect("Not an integer!");
                 let y0:i32 = inputs[2].parse().expect("Not an integer!");
                 let x1:i32 = inputs[3].parse().expect("Not an integer!");
                 let y1:i32 = inputs[4].parse().expect("Not an integer!");
                 Shape::Line { point0:Point { x:x0, y:y0 }, point1:Point {x:x1, y:y1 }}
+            },
+            "c" => {
+                let x:i32 = inputs[1].parse().expect("Not an integer!");
+                let y:i32 = inputs[2].parse().expect("Not an integer!");
+                let r:i32 = inputs[3].parse().expect("Not an integer!");
+                Shape::Circle { point:Point { x:x, y:y }, radius:r }
             }
+             _ => panic!("unknown shape description")
         }
     }
     #[test]
@@ -164,6 +171,21 @@ mod tests {
                assert_eq!(point0.y, -5);
                assert_eq!(point1.x, 42);
                assert_eq!(point1.y, 7);
+            }
+            _ => {
+                assert!(false)
+            }
+        }
+    }
+    #[test]
+    fn get_shape_can_read_a_circle() {
+        let s = "c -2 5 42";
+        let sh : Shape =get_shape(s);
+        match sh {
+            Shape::Circle { point, radius } => { 
+               assert_eq!(point.x, -2);
+               assert_eq!(point.y, 5);
+               assert_eq!(radius, 42);
             }
             _ => {
                 assert!(false)

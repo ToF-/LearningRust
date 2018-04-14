@@ -33,7 +33,7 @@ mod tests {
         fn minimum_bounding_rectangle(&self) -> Shape {
             Shape::Line { point0:self.min_point(), point1:self.max_point() }
         }
-        fn minimum_bounding_rectangle_with(&self,other:&Shape) -> Shape {
+        fn minimum_bounding_rectangle_with(&self, other:&Shape) -> Shape {
             if let Shape::Line { point0:p0, point1:p1 } = self.minimum_bounding_rectangle() {
                 if let Shape::Line { point0:p2, point1:p3 } = other.minimum_bounding_rectangle() {
                     let p4 = Shape::Line { point0:p0, point1:p2}.min_point();
@@ -41,22 +41,14 @@ mod tests {
                     return Shape::Line { point0:p4, point1:p5 }
                 }
             }
-            panic!("wtf")
+            panic!("unexpected condition")
         }
     }
-    fn min_point(v:Vec<Shape>) -> Point {
+    fn minimum_bounding_rectangle(v:Vec<Shape>) -> Shape {
         let (head,tail) = v.split_at(1);
-        let init = head[0].min_point();
-        tail.iter().fold(init, | mut acc:Point, shape | {
-            acc = Shape::Line { point0: acc, point1: shape.min_point() }.min_point();
-            acc
-        })
-    }
-    fn max_point(v:Vec<Shape>) -> Point {
-        let (head,tail) = v.split_at(1);
-        let init = head[0].max_point();
-        tail.iter().fold(init, | mut acc:Point, shape | {
-            acc = Shape::Line { point0: acc, point1: shape.max_point() }.max_point();
+        let init = head[0].minimum_bounding_rectangle();
+        tail.iter().fold(init, | mut acc, shape | {
+            acc = acc.minimum_bounding_rectangle_with(shape);
             acc
         })
     }
@@ -84,64 +76,43 @@ mod tests {
              _ => panic!("unknown shape description")
         }
     }
+    
     #[test]
     fn point_minimum_bounding_rectangle() {
         let p = Shape::Point { point:Point { x:-3, y:5 }}.minimum_bounding_rectangle();
         if let Shape::Line { point0, point1 } = p {
-            assert_eq!(point0.x, -3);
-            assert_eq!(point0.y,  5);
-            assert_eq!(point1.x, -3);
-            assert_eq!(point1.y,  5);
+            assert_eq!(point0.x, -3); assert_eq!(point0.y,  5); assert_eq!(point1.x, -3); assert_eq!(point1.y,  5);
         }
     }
     #[test]
     fn line_point_minimum_bounding_rectangle() {
         let l = Shape::Line { point0:Point { x:4, y:-25 }, point1:Point { x:-3, y:5}}.minimum_bounding_rectangle();
         if let Shape::Line { point0, point1 } = l {
-            assert_eq!(point0.x, -3);
-            assert_eq!(point0.y,-25);
-            assert_eq!(point1.x,  4);
-            assert_eq!(point1.y,  5);
+            assert_eq!(point0.x, -3); assert_eq!(point0.y,-25); assert_eq!(point1.x,  4); assert_eq!(point1.y,  5);
         }
     }
     #[test]
     fn circle_point_minimum_bounding_rectangle() {
         let c = Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }.minimum_bounding_rectangle();
         if let Shape::Line { point0, point1 } = c {
-            assert_eq!(point0.x,-13);
-            assert_eq!(point0.y, -5);
-            assert_eq!(point1.x,  7);
-            assert_eq!(point1.y, 15);
+            assert_eq!(point0.x,-13); assert_eq!(point0.y, -5); assert_eq!(point1.x,  7); assert_eq!(point1.y, 15);
         }
     }
     #[test]
     fn minimum_bounding_rectangle_with_other_shape() {
         let c = Shape::Circle { point:Point { x:-3, y:5 }, radius:10 };
         let l = Shape::Line { point0:Point { x:4, y:-25 }, point1:Point { x:-3, y:5}};
-        if let Shape::Line { point0, point1 } = c.minimum_bounding_rectangle_with(&c) {
-            assert_eq!(point0.x,-13);
-            assert_eq!(point0.y,-25);
-            assert_eq!(point1.x,  7);
-            assert_eq!(point1.y, 15);
+        if let Shape::Line { point0, point1 } = c.minimum_bounding_rectangle_with(&l) {
+            assert_eq!(point0.x,-13); assert_eq!(point0.y,-25); assert_eq!(point1.x,  7); assert_eq!(point1.y, 15);
         }
     }
     #[test]
-    fn min_point_of_a_list_of_shapes() {
-        let c = min_point(vec![Shape::Point { point:Point { x:-3, y:5}}
+    fn minimum_bounding_rectangle_a_list_of_shapes() {
+        if let Shape::Line { point0, point1 } = minimum_bounding_rectangle(vec![Shape::Point { point:Point { x:-3, y:5}}
                     ,Shape::Line { point0:Point { x:-8, y:45 }, point1:Point { x:4, y:-25} }
-                    ,Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }]);
-        assert_eq!(c.x,-13);
-        assert_eq!(c.y,-25);
-
-    }
-    #[test]
-    fn max_point_of_a_list_of_shapes() {
-        let c = max_point(vec![Shape::Point { point:Point { x:-3, y:5}}
-                    ,Shape::Line { point0:Point { x:-8, y:45 }, point1:Point { x:4, y:-25} }
-                    ,Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }]);
-        assert_eq!(c.x,7);
-        assert_eq!(c.y,45);
-
+                    ,Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }]) {
+            assert_eq!(point0.x,-13); assert_eq!(point0.y,-25); assert_eq!(point1.x,  7); assert_eq!(point1.y, 45);
+        }
     }
     #[test]
     fn get_shape_can_read_a_point() {

@@ -1,0 +1,1 @@
+/Users/tof/dev/LearningRust/minimum_bounding_rectangle/target/debug/minimum_bounding_rectangle: /Users/tof/dev/LearningRust/minimum_bounding_rectangle/src/main.rs /Users/tof/dev/LearningRust/minimum_bounding_rectangle/src/lib.rs

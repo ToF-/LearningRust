@@ -6,9 +6,9 @@ mod tests {
     } 
 
     enum Shape {
-        Point  { point : Point },  
-        Line   { point0 : Point, point1 : Point },
-        Circle { point : Point, radius : i32 },
+        Point  { point:Point },  
+        Line   { point0:Point, point1:Point },
+        Circle { point:Point, radius:i32 },
     }
 
     impl Shape {
@@ -30,8 +30,21 @@ mod tests {
         fn max_point(&self) -> Point {
             self.ext_point(&cmp::max)
         }
+        fn minimum_bounding_rectangle(&self) -> Shape {
+            Shape::Line { point0:self.min_point(), point1:self.max_point() }
+        }
+        fn minimum_bounding_rectangle_with(&self,other:&Shape) -> Shape {
+            if let Shape::Line { point0:p0, point1:p1 } = self.minimum_bounding_rectangle() {
+                if let Shape::Line { point0:p2, point1:p3 } = other.minimum_bounding_rectangle() {
+                    let p4 = Shape::Line { point0:p0, point1:p2}.min_point();
+                    let p5 = Shape::Line { point0:p1, point1:p3}.max_point();
+                    return Shape::Line { point0:p4, point1:p5 }
+                }
+            }
+            panic!("wtf")
+        }
     }
-    fn min_point(v : Vec<Shape>) -> Point {
+    fn min_point(v:Vec<Shape>) -> Point {
         let (head,tail) = v.split_at(1);
         let init = head[0].min_point();
         tail.iter().fold(init, | mut acc:Point, shape | {
@@ -39,7 +52,7 @@ mod tests {
             acc
         })
     }
-    fn max_point(v : Vec<Shape>) -> Point {
+    fn max_point(v:Vec<Shape>) -> Point {
         let (head,tail) = v.split_at(1);
         let init = head[0].max_point();
         tail.iter().fold(init, | mut acc:Point, shape | {
@@ -47,7 +60,7 @@ mod tests {
             acc
         })
     }
-    fn get_shape(s : &str) -> Shape {
+    fn get_shape(s:&str) -> Shape {
         let inputs:Vec<&str> = s.trim().split(" ").collect();
         match inputs[0] {
             "p" => { 
@@ -72,71 +85,67 @@ mod tests {
         }
     }
     #[test]
-    fn point_min_point_test() {
-        let p = Shape::Point { point : Point { x:-3, y:5 }};
-        let c = p.min_point();
-        assert_eq!(c.x, -3);
-        assert_eq!(c.y, 5)
+    fn point_minimum_bounding_rectangle() {
+        let p = Shape::Point { point:Point { x:-3, y:5 }}.minimum_bounding_rectangle();
+        if let Shape::Line { point0, point1 } = p {
+            assert_eq!(point0.x, -3);
+            assert_eq!(point0.y,  5);
+            assert_eq!(point1.x, -3);
+            assert_eq!(point1.y,  5);
+        }
     }
     #[test]
-    fn line_min_point_test() {
-        let p = Shape::Line { point0 : Point { x:-3, y:5 }, point1 : Point { x:4, y:-25} };
-        let c = p.min_point();
-        assert_eq!(c.x, -3);
-        assert_eq!(c.y, -25)
+    fn line_point_minimum_bounding_rectangle() {
+        let l = Shape::Line { point0:Point { x:4, y:-25 }, point1:Point { x:-3, y:5}}.minimum_bounding_rectangle();
+        if let Shape::Line { point0, point1 } = l {
+            assert_eq!(point0.x, -3);
+            assert_eq!(point0.y,-25);
+            assert_eq!(point1.x,  4);
+            assert_eq!(point1.y,  5);
+        }
     }
     #[test]
-    fn circle_min_point_test() {
-        let p = Shape::Circle { point : Point { x:-3, y:5 }, radius : 10 };
-        let c = p.min_point();
-        assert_eq!(c.x, -13);
-        assert_eq!(c.y, -5)
+    fn circle_point_minimum_bounding_rectangle() {
+        let c = Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }.minimum_bounding_rectangle();
+        if let Shape::Line { point0, point1 } = c {
+            assert_eq!(point0.x,-13);
+            assert_eq!(point0.y, -5);
+            assert_eq!(point1.x,  7);
+            assert_eq!(point1.y, 15);
+        }
     }
     #[test]
-    fn point_max_point_test() {
-        let p = Shape::Point { point : Point { x:-3, y:5 }};
-        let c = p.max_point();
-        assert_eq!(c.x, -3);
-        assert_eq!(c.y, 5)
-    }
-    #[test]
-    fn line_max_point_test() {
-        let p = Shape::Line { point0 : Point { x:-3, y:5 }, point1 : Point { x:4, y:-25} };
-        let c = p.max_point();
-        assert_eq!(c.x, 4);
-        assert_eq!(c.y, 5)
-    }
-    #[test]
-    fn circle_max_point_test() {
-        let p = Shape::Circle { point : Point { x:-3, y:5 }, radius : 10 };
-        let c = p.max_point();
-        assert_eq!(c.x, 7);
-        assert_eq!(c.y, 15)
+    fn minimum_bounding_rectangle_with_other_shape() {
+        let c = Shape::Circle { point:Point { x:-3, y:5 }, radius:10 };
+        let l = Shape::Line { point0:Point { x:4, y:-25 }, point1:Point { x:-3, y:5}};
+        if let Shape::Line { point0, point1 } = c.minimum_bounding_rectangle_with(&c) {
+            assert_eq!(point0.x,-13);
+            assert_eq!(point0.y,-25);
+            assert_eq!(point1.x,  7);
+            assert_eq!(point1.y, 15);
+        }
     }
     #[test]
     fn min_point_of_a_list_of_shapes() {
-        let v = vec![Shape::Point { point : Point { x:-3, y:5}}
-                    ,Shape::Line { point0 : Point { x:-8, y:45 }, point1 : Point { x:4, y:-25} }
-                    ,Shape::Circle { point : Point { x:-3, y:5 }, radius : 10 }];
-        let c = min_point(v);
+        let c = min_point(vec![Shape::Point { point:Point { x:-3, y:5}}
+                    ,Shape::Line { point0:Point { x:-8, y:45 }, point1:Point { x:4, y:-25} }
+                    ,Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }]);
         assert_eq!(c.x,-13);
         assert_eq!(c.y,-25);
 
     }
     #[test]
     fn max_point_of_a_list_of_shapes() {
-        let v = vec![Shape::Point { point : Point { x:-3, y:5}}
-                    ,Shape::Line { point0 : Point { x:-8, y:45 }, point1 : Point { x:4, y:-25} }
-                    ,Shape::Circle { point : Point { x:-3, y:5 }, radius : 10 }];
-        let c = max_point(v);
+        let c = max_point(vec![Shape::Point { point:Point { x:-3, y:5}}
+                    ,Shape::Line { point0:Point { x:-8, y:45 }, point1:Point { x:4, y:-25} }
+                    ,Shape::Circle { point:Point { x:-3, y:5 }, radius:10 }]);
         assert_eq!(c.x,7);
         assert_eq!(c.y,45);
 
     }
     #[test]
     fn get_shape_can_read_a_point() {
-        let s = "p 3 -5";
-        let sh : Shape =get_shape(s);
+        let sh:Shape =get_shape("p 3 -5");
         match sh {
             Shape::Point { point } => { 
                assert_eq!(point.x, 3);
@@ -149,8 +158,7 @@ mod tests {
     }
     #[test]
     fn get_shape_can_read_any_point() {
-        let s = "p -34 4807";
-        let sh : Shape =get_shape(s);
+        let sh:Shape =get_shape("p -34 4807");
         match sh {
             Shape::Point { point } => { 
                assert_eq!(point.x, -34);
@@ -163,8 +171,7 @@ mod tests {
     }
     #[test]
     fn get_shape_can_read_a_line() {
-        let s = "l 3 -5 42 7";
-        let sh : Shape =get_shape(s);
+        let sh:Shape =get_shape("l 3 -5 42 7");
         match sh {
             Shape::Line { point0, point1 } => { 
                assert_eq!(point0.x, 3);
@@ -179,8 +186,7 @@ mod tests {
     }
     #[test]
     fn get_shape_can_read_a_circle() {
-        let s = "c -2 5 42";
-        let sh : Shape =get_shape(s);
+        let sh:Shape =get_shape("c -2 5 42");
         match sh {
             Shape::Circle { point, radius } => { 
                assert_eq!(point.x, -2);
@@ -192,4 +198,5 @@ mod tests {
             }
         }
     }
+
 }

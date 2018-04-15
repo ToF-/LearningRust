@@ -45,14 +45,6 @@ fn main() {
             panic!("unexpected condition")
         }
     }
-    fn minimum_bounding_rectangle(v:Vec<Shape>) -> Shape {
-        let (head,tail) = v.split_at(1);
-        let init = head[0].minimum_bounding_rectangle();
-        tail.iter().fold(init, | mut acc, shape | {
-            acc = acc.minimum_bounding_rectangle_with(shape);
-            acc
-        })
-    }
     fn get_shape(s:&str) -> Shape {
         let inputs:Vec<&str> = s.trim().split(" ").collect();
         match inputs[0] {
@@ -89,18 +81,19 @@ fn main() {
     let max_cases = read_input().expect("no input").trim().parse().expect("not a number");
     for _ in 0..max_cases {
         let max_shapes = read_input().expect("no input").trim().parse().expect("not a number");
-        let mut shapes:Vec<Shape> = vec![]; 
-        for _ in 0..max_shapes {
+        let s = read_input().expect("no input");
+        let mut mbr = get_shape(&s).minimum_bounding_rectangle();
+        for _ in 1..max_shapes {
             match read_input() {
                 Ok(line) => { 
-                    shapes.push(get_shape(&line))
+                    mbr = mbr.minimum_bounding_rectangle_with(&get_shape(&line))
                 }, 
                 Err(_) => {
                     break
                 }
             }
         }
-        if let Shape::Line { point0:p0, point1:p1 } = minimum_bounding_rectangle(shapes) {
+        if let Shape::Line { point0:p0, point1:p1 } = mbr {
             println!("{} {} {} {}", p0.x, p0.y, p1.y, p1.y)
         }else {
             panic!("unexpected condition")

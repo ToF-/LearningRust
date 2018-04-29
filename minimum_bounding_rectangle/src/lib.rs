@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use std::cmp;
+    use spectral::prelude.*
     struct Point {
         x:i32, y:i32 
     } 

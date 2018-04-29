@@ -7,5 +7,6 @@ mod tests {
 }
 
 fn main() {
-    println!("hello world")
+    let s = String::from("foo ").trim().to_string();
+    println!("{}",s);
 }

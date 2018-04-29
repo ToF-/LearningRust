@@ -6,6 +6,8 @@
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+    const MAX_PWD:usize = 200;
     fn bit(n : u8, b:u8) -> u8 {
         b & (1 << n)
     }
@@ -24,6 +26,18 @@ mod tests {
     }
     fn key_b(s : &str) -> u8 {
         key(s, &bit_shift3)
+
+    }
+    fn keys(group : &str) -> (u8,u8) {
+        (key_a(group),key_b(group))
+    }
+    fn password<'a>(groups:Vec<&str>, line:&str) -> Cow<'a,str> {
+        let l = line.as_bytes();
+        Cow::Owned(groups.into_iter().map(|group| keys(group) )
+                   .fold(String::with_capacity(MAX_PWD), 
+                        |mut result:String, (k_a,k_b):(u8,u8) |
+            { result.push(l[k_a as usize] as char); 
+              result.push(l[k_b as usize] as char); result } ))
     }
 
 
@@ -44,4 +58,16 @@ mod tests {
         let s = "qwe345";
         assert_eq!(46, key_b(s));
     }   
+    #[test]
+    fn password_can_read_password_from_strings() {
+        let groups = vec!["qwe345","rf3Arg"];
+        let line   = "XSBSRasdew9873465hkldsfsalndfvnfq489uqovkLKJHaeDaae555Sk5asdpASD";
+        assert_eq!("keep", password(groups,line));
+        let groups = vec!["qwe345"];
+        let line   = "XSBSRasdew9873465hkldsfsalndfvnfq489uqovkLKJHaeDaae555Sk5asdpASD";
+        assert_eq!("ke", password(groups,line));
+        let groups = vec!["2S4J5K","111111","lrtb2A"];
+        let line   = "isimgsow45ipfgisd56wfgngdfcdkgc7kKKKkuuJJgfstdygQdWORQADFSLKF2K8";
+        assert_eq!("coding", password(groups,line));
+    }
 }

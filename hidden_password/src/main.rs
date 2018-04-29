@@ -6,6 +6,10 @@
 
 #[cfg(test)]
 mod tests {
+}
+
+fn main() {
+    use std::io;
     use std::borrow::Cow;
     const MAX_PWD:usize = 200;
     fn bit(n : u8, b:u8) -> u8 {
@@ -70,4 +74,24 @@ mod tests {
         let line   = "isimgsow45ipfgisd56wfgngdfcdkgc7kKKKkuuJJgfstdygQdWORQADFSLKF2K8";
         assert_eq!("coding", password(groups,line));
     }
+
+    fn read_input() -> io::Result<String> {
+        let mut input = String::new();
+
+        io::stdin().read_line(&mut input)?;
+
+
+        Ok(input)
+    }
+    let max_cases = read_input().expect("no input").trim().parse().expect("not a number");
+    for _ in 0..max_cases {
+        let max_groups:usize = read_input().expect("no input").trim().parse().expect("not a number");
+        let first_line = read_input().expect("no input");
+        let second_line= read_input().expect("no input");
+        let groups : Vec<&str> = first_line.trim().split(' ').collect();
+        assert_eq!(max_groups,groups.len());
+        println!("{}", password(groups, &second_line));
+        read_input();
+
+        }
 }

@@ -10,6 +10,7 @@ fn main () {
     use std::io;
     use std::num;
     use std::cmp::Ordering;
+
     fn read_input() -> io::Result<String> {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
@@ -43,12 +44,9 @@ fn main () {
             r1 = b;
         }
         let d:f64 = ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2)).sqrt();
-        println!("{} {} {}",d,d+r2,r1);
-        println!("{}", match (d+r2).partial_cmp(&r1) {
-            Some(Less)    => "I",
-            Some(Greater) => "O",
-            Some(Equal)   => "E",
-            None    => "."
-            });
-        }
+        let result = if (d+r2-r1) < 0.0 { "I" }
+        else if (d+r2-r1) > 0.0 { "0" }
+        else { "E" };
+        println!("{}", result);
+    }
 }

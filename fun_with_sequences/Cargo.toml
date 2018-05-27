@@ -1,0 +1,6 @@
+[package]
+name = "fun_with_sequences"
+version = "0.1.0"
+authors = ["ToF- <cthibaut@octo.com>"]
+
+[dependencies]

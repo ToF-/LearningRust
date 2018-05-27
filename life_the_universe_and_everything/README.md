@@ -64,23 +64,23 @@ can only work for very simple programs like this one.
 
 What if the problem was more complex ? Then we would very probably be caught in a nasty loop:
 
-    .1 writing the program
-    .2 running it to see if it works
-    .3 noticing a failure in the behavior of the program
-    .4 finding the defect at the origin of the failure
-    .5 making changes to the program in order to fix the defect
-    .6 goto .w
+1. writing the program
+2. running it to see if it works
+3. noticing a failure in the behavior of the program
+4. finding the defect at the origin of the failure
+5. making changes to the program in order to fix the defect
+6. goto .w
 
 This loop stops only when we are sure, after step 2, that our program is working correctly.
 As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the code, leading to new failures in the behavior.
 
 Instead, we want to write our programs with the following approach:
 
-    .1 making a list of all the unit tests that we think our program should pass
-    .2 writing an automated test for a bit of behavior of the program
-    .3 making the test pass with the simplest code that wpossibly work
-    .4 refactoring our code, improving legibility, expressivity and simplicity
-    .5 as long as there are tests in our list, goto .2
+1. making a list of all the unit tests that we think our program should pass
+2. writing an automated test for a bit of behavior of the program
+3. making the test pass with the simplest code that wpossibly work
+4. refactoring our code, improving legibility, expressivity and simplicity
+5. as long as there are tests in our list, goto .2
 
 Writing an automated unit test is easy. Here's one example:
 
@@ -107,8 +107,8 @@ Let's try this approach with our simple problem.
 
 Making a list of the test our program should pass:
 
-    .1 the simplest case: given the line "42" in input, the program will output "42" and then stop.
-    .2 the most current case: given some line in input, the program will print them until a "42" is printed, then it will stop.
+1. the simplest case: given the line "42" in input, the program will output "42" and then stop.
+2. the most current case: given some line in input, the program will print them until a "42" is printed, then it will stop.
 
 How to we program a unit test to check what the output of a program is, given a specific input ?
 Tests using standard input and output are not reliable, unless we mean a test that is automated from the command line:

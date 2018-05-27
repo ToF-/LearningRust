@@ -16,8 +16,8 @@ pub fn process<In, Out>(input: &mut In, output: &mut Out)
 {
     loop {
         let mut buffer = String::new();
-        input.read_line(&mut buffer).expect("no input");
-        write!(output, "{}", buffer).expect("no output");
+        input.read_line(&mut buffer).expect("input error");
+        write!(output, "{}", buffer).expect("output error");
         if buffer == "42\n" {
             break
         }
@@ -28,11 +28,6 @@ pub fn process<In, Out>(input: &mut In, output: &mut Out)
 mod main_process_should {
     use std::io::Cursor;
     use super::*;
-
-    #[test]
-    fn assume_arithmetic_is_working() {
-        assert_eq!(2+2,4);
-    }
 
     fn assert_process(given: &str, expected: &str) {
         let mut input = Cursor::new(given);

@@ -1,1 +1,0 @@
-/Users/tof/dev/LearningRust/char_patterns_3/target/debug/char_patterns_3-13b181ae42131d3c: /Users/tof/dev/LearningRust/char_patterns_3/src/lib.rs /Users/tof/dev/LearningRust/char_patterns_3/src/main.rs

@@ -1,22 +1,30 @@
 // http://www.spoj.com/problems/EXPECT/
 use std::io::{
     stdin,
+    stdout,
+    Cursor,
+    BufRead,
+    Write,
 };
 
 fn main() {
 //    process(&mut BufReader::new(stdin()), &mut stdout());
+    let input = &mut Cursor::new("4807\n42\n");
+    let mut output= Cursor::new(vec!());
+
     loop {
         let mut buffer = String::new();
 
-        stdin().read_line(&mut buffer)
+        input.read_line(&mut buffer)
             .expect("input error");
 
-        print!("{}", buffer);
+        write!(output, "{}", buffer);
 
         if buffer == "42\n" {
             break
         }
     }
+    print!("{}",String::from_utf8(output.into_inner()).expect("incorrect utf-8"));
 }
 
 // pub fn process<In, Out>(input: &mut In, output: &mut Out)

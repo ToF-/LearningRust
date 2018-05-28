@@ -118,7 +118,110 @@ Tests using standard input and output are not reliable, unless we mean a test th
     cargo run <input >output
     diff expect output     
 
-That method could work for our simple program, but involves scaffolding to be built outside the code of our program, and it only works for testing the whole behavior, not bit of behavior.
+This method could work for our simple program, but it involves building "scaffolding" script outside the code of our program, and it only works for testing the whole behavior, not bit of behavior.
 
-We need to be able to tell our program that the "input" is not coming from the standard input stream, but from an object in memory that we have defined ourselves.
+Ideally we would prefer to be able to tell our program that the input to the program is not coming from the standard input stream, but from an object in memory that we have defined ourselves. In the same way, we would like to "reroute" the output of the program into an object in memory that we can examise within a test.
 
+In other words, we need *seams* to the input and output channels used by out program.
+
+Substituting to stdin()
+
+    impl Stdin
+    
+    pub fn read_line(&self, buf: &mut String) -> Result<usize>
+
+    Locks this handle and reads a line of input into the specified buffer.
+
+    For detailed semantics of this method, see the documentation on BufRead::read_line.
+
+A BufRead is a type of Reader which has an internal buffer, allowing it to perform extra ways of reading.
+
+A Cursor wraps another type and provides it with a Seek implementation.
+
+Cursors are typically used with in-memory buffers to allow them to implement Read and/or Write, allowing these buffers to be used anywhere you might use a reader or writer that does actual I/O.
+
+The standard library implements some I/O traits on various types which are commonly used as a buffer, like Cursor<Vec<u8>> and Cursor<&[u8]>.
+
+
+    use std::io::{
+        stdin,
+        Cursor,
+        BufRead,
+    };
+
+    fn main() {
+        let input = &mut Cursor::new("4807\n42\n");
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+
+    cargo run ⏎
+    4807
+    42
+
+Substituting to stdout()
+
+
+    use std::io::{
+        stdin,
+        stdout,
+        Cursor,
+        BufRead,
+        Write,
+    };
+
+    fn main() {
+        let input = &mut Cursor::new("4807\n42\n");
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(stdout(), "{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+
+
+    use std::io::{
+        stdin,
+        stdout,
+        Cursor,
+        BufRead,
+        Write,
+    };
+
+    fn main() {
+        let input = &mut Cursor::new("4807\n42\n");
+        let mut output= Cursor::new(vec!());
+
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(output, "{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+        print!("{}",String::from_utf8(output.into_inner()).expect("incorrect utf-8"));
+    }

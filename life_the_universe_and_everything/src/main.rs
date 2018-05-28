@@ -2,74 +2,55 @@
 use std::io::{
     stdin,
     stdout,
-    Cursor,
     BufRead,
+    BufReader,
     Write,
 };
 
 fn main() {
-//    process(&mut BufReader::new(stdin()), &mut stdout());
-    let input = &mut Cursor::new("4807\n42\n");
-    let mut output= Cursor::new(vec!());
+    process(&mut BufReader::new(stdin()), &mut stdout());
+}
 
+pub fn process<In,Out>(input: &mut In, output: &mut Out)
+    where In: BufRead, Out: Write
+{
     loop {
         let mut buffer = String::new();
 
         input.read_line(&mut buffer)
             .expect("input error");
 
-        write!(output, "{}", buffer);
+        write!(output, "{}", buffer).expect("output error");
 
         if buffer == "42\n" {
             break
         }
     }
-    print!("{}",String::from_utf8(output.into_inner()).expect("incorrect utf-8"));
 }
-
-// pub fn process<In, Out>(input: &mut In, output: &mut Out)
-//     where In: BufRead, Out: Write
-// {
-//     loop {
-//         let mut buffer = String::new();
-// 
-//         input.read_line(&mut buffer).expect("input error");
-// 
-//         write!(output, "{}", buffer).expect("output error");
-//         if buffer == "42\n" {
-//             break
-//         }
-//     }
-// }
-// 
 
 #[cfg(test)]
-mod sample_test {
+ mod main_process_should {
+     use std::io::Cursor;
+     use super::*;
 
+     fn given_then_expect(given: &str, expected: &str) {
+         let mut input = Cursor::new(given);
+         let mut output= Cursor::new(vec!());
+ 
+         process(&mut input, &mut output);
+ 
+         let result = String::from_utf8(output.into_inner())
+            .expect("incorrect utf-8");
+ 
+         assert_eq!(expected, &result)
+     }
     #[test]
-    fn should_show_that_addition_works() {
-        assert_eq!(2+2, 4)
+    fn given_42_print_42_then_stop() {
+        given_then_expect("42\n","42\n");
     }
-
+    #[test]
+    fn given_any_input_stop_after_42() {
+        given_then_expect("4807\n42\n","4807\n42\n");
+    }
 }
 
-// mod main_process_should {
-//     use std::io::Cursor;
-//     use super::*;
-// 
-//     fn given_then_expect(given: &str, expected: &str) {
-//         let mut input = Cursor::new(given);
-//         let mut output= Cursor::new(vec!());
-// 
-//         process(&mut input, &mut output);
-// 
-//         let result = String::from_utf8(output.into_inner()).expect("incorrect utf-8");
-// 
-//         assert_eq!(expected, &result)
-//     }
-//     #[test]
-//     fn stop_after_42_is_read() {
-//         given_then_expect("4807\n42\n", 
-//                           "4807\n42\n");
-//     }
-// }

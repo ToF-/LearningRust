@@ -69,7 +69,7 @@ What if the problem was more complex ? Then we would very probably be caught in 
 3. noticing a failure in the behavior of the program
 4. finding the defect at the origin of the failure
 5. making changes to the program in order to fix the defect
-6. goto .w
+6. goto 1
 
 This loop stops only when we are sure, after step 2, that our program is working correctly.
 As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the code, leading to new failures in the behavior.

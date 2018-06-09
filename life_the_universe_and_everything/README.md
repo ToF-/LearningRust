@@ -1,6 +1,7 @@
 # EXPECT - Life, the Universe, and Everything (Interactive)
 
 (from The Sphere Online Judge http://www.spoj.com/problems/EXPECT/)
+
 Your program is to use the brute-force approach in order to find the Answer to Life, the Universe, and Everything. More precisely... rewrite small numbers from input to output. Stop processing input after reading in the number 42. All numbers at input are integers of one or two digits.
 
 ## Interactive Protocol
@@ -23,12 +24,12 @@ The example of communication.
     15
     42
 
-It's an easy problem to solve with a program in Rust.
+## A very simple solution
+
+This problem is very easily solved with a small Rust program:
 
     // http://www.spoj.com/problems/EXPECT/
-    use std::io::{
-        stdin,
-    };
+    use std::io::stdin;
 
     fn main() {
         loop {
@@ -45,7 +46,9 @@ It's an easy problem to solve with a program in Rust.
         }
     }
 
-We run it, and see what happens:
+It's an infinite loop of reading buffered input and printing it, that breaks only after a certain condition is met. 
+
+By running the program
 
     cargo run ⏎
     4807 ⏎
@@ -55,34 +58,37 @@ We run it, and see what happens:
     42 ⏎
     42
 
-It's working. But this approach to programming:
+we can see that it works. But this approach to programming:
 
-    - writing a program
-    - running it to see if it works
+- *write a program*
+- *run it to see if it works*
 
-can only work for very simple programs like this one.
+is convenient only work for trivial programs. What if the problem was more complicated ? Then we would very probably be caught in a nasty loop:
 
-What if the problem was more complex ? Then we would very probably be caught in a nasty loop:
+1. *write the program*
+2. *run the program to see if it works*
+3. *look for a failure in the behavior of the program*
+4. *find the defect at the origin of the failure*
+5. *make changes to the program in order to fix the defect*
+6. *goto 2*
 
-1. writing the program
-2. running it to see if it works
-3. noticing a failure in the behavior of the program
-4. finding the defect at the origin of the failure
-5. making changes to the program in order to fix the defect
-6. goto 1
+Note that *this* infinite loop breaks on one of these conditions 
 
-This loop stops only when we are sure, after step 2, that our program is working correctly.
-As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the code, leading to new failures in the behavior.
+2.5 *if really confident or tired or running out of time, then exit*
 
-Instead, we want to write our programs with the following approach:
+As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the program, leading to new failures in the behavior.
 
-1. making a list of all the unit tests that we think our program should pass
-2. writing an automated test for a bit of behavior of the program
-3. making the test pass with the simplest code that wpossibly work
-4. refactoring our code, improving legibility, expressivity and simplicity
-5. as long as there are tests in our list, goto .2
+What we want to do instead of this approach, is to follow the Test Driven Development approach:
 
-Writing an automated unit test is easy. Here's one example:
+1. *make a list of all the unit tests that we think our program should pass*
+2. *write an automated test for a bit of behavior of the program*
+3. *make the test pass with the simplest code that could possibly work*
+4. *refactori our code, improving legibility, expressivity and simplicity*
+5. *as long as there are tests in our list, goto .2*
+
+That way, we are more confident that the program is running, and that the code has been possibly improved, when we end the loop.
+
+Writing automated unit tests in Rust is easy. Here's one example:
 
     #[cfg(test)]
     mod sample_test {
@@ -105,38 +111,221 @@ Here's how we run it:
 
 Let's try this approach with our simple problem.
 
-Making a list of the test our program should pass:
+First, let's a make a list of the tests our program should pass:
 
-1. the simplest case: given the line "42" in input, the program will output "42" and then stop.
-2. the most current case: given some line in input, the program will print them until a "42" is printed, then it will stop.
+1. *(the simplest case) given the line "42" in input, the program will output "42" and then stop.*
+2. *(the most frequent case) given some numbers in input, the program will print them until a "42" has been printed, then it will stop.*
 
-How to we program a unit test to check what the output of a program is, given a specific input ?
-Tests using standard input and output are not reliable, unless we mean a test that is automated from the command line:
+With these tests in mind, we can start again writing our program. But then we meet our first difficulty: how do we program a unit test to check what the output of program is, given a specific input ? Good unit tests in TDD are tests that respect the F.I.R.S.T criteria:
 
-    echo "42" >>input
-    echo "42" >>expect
+- Fast, meaning that manually entering input won't work very well.
+- Indepedent, meaning that each test should be executing without having an effect on the execution of others tests.
+- Repeatable, which holds only if we take great care of repeating the manual entries without errors. 
+- Self-validating, which can't hold if we content ourselves with visually validating the output.
+- Timely, meaning we can write each test before writing the part of the program that makes the test pass.
+
+For our tests to be self-validating and repeatable, we can replace manual input with some input data stored in a text file, and then automatically compare the output with some data stored in another text file. Command line tools allow us to do that. Let's create a *test_script* file and run it:
+ 
+    # test_script
+    echo "42" >input
+    echo "42" >expect
     cargo run <input >output
-    diff expect output     
+    diff expect output
 
-This method could work for our simple program, but it involves building "scaffolding" script outside the code of our program, and it only works for testing the whole behavior, not bit of behavior.
-
-Ideally we would prefer to be able to tell our program that the input to the program is not coming from the standard input stream, but from an object in memory that we have defined ourselves. In the same way, we would like to "reroute" the output of the program into an object in memory that we can examise within a test.
-
-In other words, we need *seams* to the input and output channels used by out program.
-
-Substituting to stdin()
-
-    impl Stdin
+    chmod +x test_script ⏎
+    ./test_script ⏎
     
-    pub fn read_line(&self, buf: &mut String) -> Result<usize>
+The absence of *diff* output means that the test is passing.
 
-    Locks this handle and reads a line of input into the specified buffer.
+Let's have this test execute and fail:
 
-    For detailed semantics of this method, see the documentation on BufRead::read_line.
+    // http://www.spoj.com/problems/EXPECT/
 
-A BufRead is a type of Reader which has an internal buffer, allowing it to perform extra ways of reading.
+    fn main() {
+    }
 
-A Cursor wraps another type and provides it with a Seek implementation.
+    ./test_script  ⏎
+    1d0
+    < 42
+
+We can make the test pass with a single change:
+
+    // http://www.spoj.com/problems/EXPECT/
+
+    fn main() {
+        print!("42\n");
+    }
+
+    ./test_script  ⏎
+
+Let's add our second test:
+
+    # test_script
+    echo "42" >input
+    echo "42" >expect
+    cargo run <input >output
+    diff expect output
+
+    echo "4807" >input
+    echo "42"  >>input
+    echo "4807" >expect
+    echo "42"  >>expect
+    cargo run <input >output
+    diff expect output
+
+    ./test_script  ⏎
+    1d0
+    < 4807
+
+And now we can make it pass with the version we wrote previously:
+ 
+    // http://www.spoj.com/problems/EXPECT/
+
+    use std::io::stdin;
+
+    fn main() {
+        loop {
+            let mut buffer = String::new();
+
+            stdin().read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
+    ./test_script  ⏎
+
+This technique could work for a while, but a test written this way  has several limitations :
+
+- It's not really independent, since it relies on the file system.
+- It's not really self-validating, since the testing mechanism is not coded in Rust.
+- It works only for standard input/output programs.
+- It could become very slow given a large amount of input data.
+
+Instead of building such scaffolding around the program, we would prefer to write simple tests in Rust itself, that check bits of functionality, not the whole program each time.
+
+For that to happen, we need to be able to:
+
+- substitute the real input stream with an object in memory that we can initialize to some values.
+- substitute the real output stream with an object that we can inspect and compare to our expected values.
+
+In other words, we need *seams* to the input and output streams that our central loop is using. And we need to *command* these seams in our tests (setting the input and output streams to our objects before calling the function) and in the main program (setting the input and output streams to standard input and output).
+
+## Creating seams
+
+Since we want to create seams for the input stream and the output stream, and to be able to command these seams from either the main function of our program, or from a test case, we first need to extract the function that will have the seams as parameters.
+
+Let's start with the input stream. Rust documentation says that `pub fn stdin() -> Stdin` so let's make it an argument:
+
+    use std::io:: {
+        stdin,
+        Stdin 
+        };
+
+    fn main() {
+        
+        process(stdin());
+
+    }
+
+    fn process(input : Stdin) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+    
+    ./test_script  ⏎
+
+Creating the seam for the output stream is a bit more complicated: the `print!` macro makes this output stream invisible. To make it visible, let's replace it with the `write!` macro. 
+
+
+    // http://www.spoj.com/problems/EXPECT/
+
+    use std::io:: {
+        stdin,
+        Stdin,
+        stdout
+        };
+
+    fn main() {
+        
+        process(stdin());
+
+    }
+
+    fn process(input : Stdin) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(stdout(), "{}", buffer);
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
+error[E0599]: no method named `write_fmt` found for type `std::io::Stdout` in the current scope
+  --> src/main.rs:22:9
+   |
+22 |         write!(stdout(), "{}", buffer);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: items from traits can only be used if the trait is in scope
+   = note: this error originates in a macro outside of the current crate (in Nightly builds, run with -Z external-macro-backtrace for more info)
+help: the following trait is implemented but not in scope, perhaps add a `use` for it:
+   |
+3  | use std::io::Write;
+   |
+
+Doing this requires also that we import the `Write` trait in the scope where `write!` is used.
+
+    use std::io:: {
+        stdin,
+        Stdin,
+        stdout,
+        Write
+        };
+
+    fn main() {
+        
+        process(stdin());
+
+    }
+
+    fn process(input : Stdin) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(stdout(), "{}", buffer)
+                .expect("output error");
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
 
 Cursors are typically used with in-memory buffers to allow them to implement Read and/or Write, allowing these buffers to be used anywhere you might use a reader or writer that does actual I/O.
 

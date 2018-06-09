@@ -1,0 +1,12 @@
+# test_script
+echo "42" >input
+echo "42" >expect
+cargo run <input >output
+diff expect output
+
+echo "4807" >input
+echo "42"  >>input
+echo "4807" >expect
+echo "42"  >>expect
+cargo run <input >output
+diff expect output

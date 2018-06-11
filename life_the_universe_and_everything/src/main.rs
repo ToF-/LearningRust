@@ -1,19 +1,21 @@
 // http://www.spoj.com/problems/EXPECT/
-
 use std::io:: {
     stdin,
     Stdin,
     stdout,
-    Write
-    };
+    Write,
+    Cursor,
+    BufRead
+};
 
 fn main() {
-    
-    process(stdin(), stdout());
+
+    let cursor = &mut Cursor::new("4807\n42\n");
+    process(stdin(), &mut stdout());
 
 }
 
-fn process(input : Stdin, output : Write) {
+fn process(input : &mut BufRead, output : &mut Write) {
     loop {
         let mut buffer = String::new();
 
@@ -28,3 +30,4 @@ fn process(input : Stdin, output : Write) {
         }
     }   
 }
+

@@ -1,30 +1,36 @@
-# EXPECT - Life, the Universe, and Everything (Interactive)
+# How to TDD a simple input/output program in Rust
 
-(from The Sphere Online Judge http://www.spoj.com/problems/EXPECT/)
+In my project of teaching myself the Rust language, I'm doing the exercises from the list of Basic Problems on the Sphere Online Judge website. 
 
-Your program is to use the brute-force approach in order to find the Answer to Life, the Universe, and Everything. More precisely... rewrite small numbers from input to output. Stop processing input after reading in the number 42. All numbers at input are integers of one or two digits.
+Here's the one that I picked : 
 
-## Interactive Protocol
-You should communicate with Judge using standard input and output.
+    EXPECT - Life, the Universe, and Everything (Interactive)
 
-Each time the judge will give you a number. You should rewrite this number to standard output. If this number equals 42, after rewriting your program should terminate immediately.
+    (from The Sphere Online Judge http://www.spoj.com/problems/EXPECT/)
 
-## Example
-The example of communication.
+    Your program is to use the brute-force approach in order to find the Answer to Life, the Universe, and Everything. More precisely... rewrite small numbers from input to output. Stop processing input after reading in the number 42. All numbers at input are integers of one or two digits.
 
-### Input:
+    Interactive Protocol
+    You should communicate with Judge using standard input and output.
 
-    3
-    15
-    42
+    Each time the judge will give you a number. You should rewrite this number to standard output. If this number equals 42, after rewriting your program should terminate immediately.
 
-### Output:
+    Example
+    The example of communication.
 
-    3
-    15
-    42
+    Input:
 
-## A very simple solution
+        3
+        15
+        42
+
+    Output:
+
+        3
+        15
+        42
+
+### A very simple solution
 
 This problem is very easily solved with a small Rust program:
 
@@ -58,26 +64,32 @@ By running the program
     42 ⏎
     42
 
+### The Code and Fix approach
 we can see that it works. But this approach to programming:
 
-- *write a program*
-- *run it to see if it works*
+1. *write a program*
+2. *run it to see if it works*
 
 is convenient only work for trivial programs. What if the problem was more complicated ? Then we would very probably be caught in a nasty loop:
 
 1. *write the program*
-2. *run the program to see if it works*
-3. *look for a failure in the behavior of the program*
+2. *run the program and look for a failure in its behavior*
 4. *find the defect at the origin of the failure*
 5. *make changes to the program in order to fix the defect*
 6. *goto 2*
 
-Note that *this* infinite loop breaks on one of these conditions 
+Note that *this* infinite loop is not exactly the way the approach is used. We should add a line that breaks the loop on certain conditions :
 
-2.5 *if really confident or tired or running out of time, then exit*
+1. *write the program*
+2.  *if really confident or tired or running out of time, then exit*
+2. *run the program and look for a failure in its behavior*
+4. *find the defect at the origin of the failure*
+5. *make changes to the program in order to fix the defect*
+6. *goto 2*
 
 As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the program, leading to new failures in the behavior.
 
+### The Test Driven Development approach
 What we want to do instead of this approach, is to follow the Test Driven Development approach:
 
 1. *make a list of all the unit tests that we think our program should pass*
@@ -108,15 +120,15 @@ Here's how we run it:
 
     test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
-
-Let's try this approach with our simple problem.
-
-First, let's a make a list of the tests our program should pass:
+What tests can we think of for the program given in the `Life, the universe and everything` exercise ? Let's make a list of them:
 
 1. *(the simplest case) given the line "42" in input, the program will output "42" and then stop.*
 2. *(the most frequent case) given some numbers in input, the program will print them until a "42" has been printed, then it will stop.*
 
-With these tests in mind, we can start again writing our program. But then we meet our first difficulty: how do we program a unit test to check what the output of program is, given a specific input ? Good unit tests in TDD are tests that respect the F.I.R.S.T criteria:
+With these tests in mind, we can start again writing our program. 
+
+### Testing input and output : a workaround
+But then we meet our first difficulty: how do we program a unit test to check what the output of program is, given a specific input ? Good unit tests in TDD are tests that respect the F.I.R.S.T criteria:
 
 - Fast, meaning that manually entering input won't work very well.
 - Indepedent, meaning that each test should be executing without having an effect on the execution of others tests.
@@ -200,6 +212,7 @@ And now we can make it pass with the version we wrote previously:
 
     ./test_script  ⏎
 
+### Using seams to test input/output code
 This technique could work for a while, but a test written this way  has several limitations :
 
 - It's not really independent, since it relies on the file system.
@@ -216,7 +229,7 @@ For that to happen, we need to be able to:
 
 In other words, we need *seams* to the input and output streams that our central loop is using. And we need to *command* these seams in our tests (setting the input and output streams to our objects before calling the function) and in the main program (setting the input and output streams to standard input and output).
 
-## Creating seams
+## Creating a seam on the input stream
 
 Since we want to create seams for the input stream and the output stream, and to be able to command these seams from either the main function of our program, or from a test case, we first need to extract the function that will have the seams as parameters.
 
@@ -250,7 +263,9 @@ Let's start with the input stream. Rust documentation says that `pub fn stdin() 
     
     ./test_script  ⏎
 
-Creating the seam for the output stream is a bit more complicated: the `print!` macro makes this output stream invisible. To make it visible, let's replace it with the `write!` macro. 
+### Creating a seam on output
+
+Creating the seam for the output stream is a bit more indirect, as the `print!` macro makes this output stream invisible. `print!` can be replaced with the `write!` macro. 
 
 
     // http://www.spoj.com/problems/EXPECT/
@@ -282,20 +297,22 @@ Creating the seam for the output stream is a bit more complicated: the `print!` 
         }   
     }
 
-error[E0599]: no method named `write_fmt` found for type `std::io::Stdout` in the current scope
-  --> src/main.rs:22:9
-   |
-22 |         write!(stdout(), "{}", buffer);
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: items from traits can only be used if the trait is in scope
-   = note: this error originates in a macro outside of the current crate (in Nightly builds, run with -Z external-macro-backtrace for more info)
-help: the following trait is implemented but not in scope, perhaps add a `use` for it:
-   |
-3  | use std::io::Write;
-   |
+The rust compiler will notify us as to what should be imported:
 
-Doing this requires also that we import the `Write` trait in the scope where `write!` is used.
+    error[E0599]: no method named `write_fmt` found for type `std::io::Stdout` in the current scope
+      --> src/main.rs:22:9
+       |
+    22 |         write!(stdout(), "{}", buffer);
+       |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       |
+       = help: items from traits can only be used if the trait is in scope
+       = note: this error originates in a macro outside of the current crate (in Nightly builds, run with -Z external-macro-backtrace for more info)
+    help: the following trait is implemented but not in scope, perhaps add a `use` for it:
+       |
+    3  | use std::io::Write;
+       |
+
+We import the `Write` trait in the scope where `write!` is used.
 
     use std::io:: {
         stdin,
@@ -326,6 +343,47 @@ Doing this requires also that we import the `Write` trait in the scope where `wr
         }   
     }
 
+Now we make `stdout()` a parameter value for the `process` function. The documentation says that this macro is typically used with a buffer of `&mut Write` so let's use that:
+
+    // http://www.spoj.com/problems/EXPECT/
+    use std::io:: {
+        stdin,
+        Stdin,
+        stdout,
+        Write
+    };
+
+    fn main() {
+
+        process(stdin(), &mut stdout());
+
+    }
+
+    fn process(input : Stdin, output : &mut Write) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(output, "{}", buffer)
+                .expect("output error");
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
+There! We created two seams for input and output streams.
+
+### Substituting a buffer to the input stream.
+
+Let's try, for the sake of experimenting, to substitute the input stream with a buffer with hard-coded data.
+
+We know that stdin() -> Stdin implements the `Read`trait. Can we substitute it with an object that would also implement this trait ?
+
+One of the classes that implement Read is Cursor: 
 
 Cursors are typically used with in-memory buffers to allow them to implement Read and/or Write, allowing these buffers to be used anywhere you might use a reader or writer that does actual I/O.
 

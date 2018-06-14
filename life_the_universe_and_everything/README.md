@@ -359,7 +359,7 @@ Now we make `stdout()` a parameter value for the `process` function. The documen
 
     }
 
-    fn process(input : Stdin, output : &mut Write) {
+    fn process(input : Stdin, output : &mut Stdout) {
         loop {
             let mut buffer = String::new();
 
@@ -381,109 +381,24 @@ There! We created two seams for input and output streams.
 
 Let's try, for the sake of experimenting, to substitute the input stream with a buffer with hard-coded data.
 
-We know that stdin() -> Stdin implements the `Read`trait. Can we substitute it with an object that would also implement this trait ?
+We know that `stdin() -> Stdin` implements the `Read` trait. Can we substitute it with an object that would also implement this trait ? Basically what we need is an object in memory that would implement the `read_line` method. Classes that implement the trait `BufRead` have a `read_line` method. Thus we need to change the `process` function so that it can take a value of any type that implements the trait `BufRead` and then we can use the BufReader class, that provides a buffered read, given a buffer source:
 
-One of the classes that implement Read is Cursor: 
-
-Cursors are typically used with in-memory buffers to allow them to implement Read and/or Write, allowing these buffers to be used anywhere you might use a reader or writer that does actual I/O.
-
-The standard library implements some I/O traits on various types which are commonly used as a buffer, like Cursor<Vec<u8>> and Cursor<&[u8]>.
-
-
-    use std::io::{
-        stdin,
-        Cursor,
-        BufRead,
-    };
-
-    fn main() {
-        let input = &mut Cursor::new("4807\n42\n");
-        loop {
-            let mut buffer = String::new();
-
-            input.read_line(&mut buffer)
-                .expect("input error");
-
-            print!("{}", buffer);
-
-            if buffer == "42\n" {
-                break
-            }
-        }
-    }
-
-
-    cargo run ⏎
-    4807
-    42
-
-Substituting to stdout()
-
-
-    use std::io::{
+    use std::io:: {
         stdin,
         stdout,
-        Cursor,
-        BufRead,
         Write,
+        BufRead,
+        BufReader
+
     };
 
     fn main() {
-        let mut input = Cursor::new("4807\n42\n");
-        loop {
-            let mut buffer = String::new();
 
-            input.read_line(&mut buffer)
-                .expect("input error");
+        process(&mut BufReader::new(stdin()), &mut stdout());
 
-            write!(stdout(), "{}", buffer);
-
-            if buffer == "42\n" {
-                break
-            }
-        }
     }
 
-
-
-    use std::io::{
-        stdin,
-        stdout,
-        Cursor,
-        BufRead,
-        Write,
-    };
-
-    fn main() {
-        let input = &mut Cursor::new("4807\n42\n");
-        let mut output= Cursor::new(vec!());
-
-        loop {
-            let mut buffer = String::new();
-
-            input.read_line(&mut buffer)
-                .expect("input error");
-
-            write!(output, "{}", buffer);
-
-            if buffer == "42\n" {
-                break
-            }
-        }
-        print!("{}",String::from_utf8(output.into_inner()).expect("incorrect utf-8"));
-    }
-`
-And now we extract a method:
-
-    fn main() {
-        let mut input = Cursor::new("4807\n42\n");
-        let mut output= Cursor::new(vec!());
-        process(&mut input, &mut output);
-        print!("{}",String::from_utf8(output.into_inner()).expect("incorrect utf-8"));
-    }
-
-    pub fn process<In,Out>(input: &mut In, output: &mut Out)
-        where In: BufRead, Out: Write
+    fn process<T:BufRead>(input : &mut T, output : &mut Write)
     {
         loop {
             let mut buffer = String::new();
@@ -491,31 +406,152 @@ And now we extract a method:
             input.read_line(&mut buffer)
                 .expect("input error");
 
-            write!(output, "{}", buffer);
+            write!(output, "{}", buffer)
+                .expect("output error");
 
-            if buffer == "42\n" {
-                break
+            if buffer == "42\n" { 
+                break 
             }
-        }
+        }   
     }
 
-Restablish the main program :
+Now, what if we gave another buffer instead of `stdin` to our `BufReader`? Let's give it a `Cursor`, that we'll initialize with a hard coded string.
 
-    use std::io::{
+    fn main() {
+
+        process(
+            &mut BufReader::new(Cursor::new("6\n6\n6\n42\n")),
+            &mut stdout());
+
+    }
+
+And now the tests reveal that the input has been forced to 6s :
+
+    0a1,3
+    > 6
+    > 6
+    > 6
+
+    1c1,3
+    < 4807
+    ---
+    > 6
+    > 6
+    > 6
+
+### Substituting a buffer to stdout()
+
+If we put a `Cursor` initialized with a `vec` in the place ofi `stdout()`, 
+
+
+    fn main() {
+
+        process(
+            &mut BufReader::new(Cursor::new("6\n6\n6\n42\n")),
+            &mut Cursor::new(vec!()));
+
+    }
+
+then the tests reveal that the program didn't print anything :
+
+    1d0
+    < 42
+
+    1,2d0
+    < 4807
+    < 42
+    < 42
+
+### Writing automated test with the seams
+
+Now that we know we can manipulate seams, we can use them for testing. The idea is to :
+
+1. set up an input buffer with a hard coded string, e.g. `"4807\n42\n"`
+2. set up the output buffer to a new `Vec` 
+3. call our `process` function with these parameters
+4. get the content of the output buffer
+5. compare this content with an expected result (here `"4807\n42\n"`) 
+
+Step 4  is done using  `into_inner()` to access the inner representation of the buffer, and `from_utf8` to convert the utf-8 codes into a standard string.
+
+
+    #[cfg(test)]
+    #[test]
+    fn main() {
+
+        let input = Cursor::new("4807\n42\n");
+        let mut output= Cursor::new(vec!());
+        process(&mut BufReader::new(input), &mut output);
+        
+        let result = String::from_utf8(output.into_inner())
+            .expect("incorrect utf-8");
+
+        assert_eq!("4807\n42\n", result);
+
+    }
+
+And now we can run our program as a test suite: 
+
+    cargo test ⏎
+
+       Doc-tests life_the_universe_and_everything
+
+    running 0 tests
+
+    test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+
+What if we sabotage our `process`function ?
+
+    fn process<T:BufRead>(input : &mut T, output : &mut Write)
+    {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(output, "{}!", buffer)
+                .expect("output error");
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
+
+Then the test reveal the problem:
+
+    cargo test ⏎
+    thread 'main' panicked at 'assertion failed: `(left == right)`
+      left: `"4807\n42\n"`,
+     right: `"4807\n!42\n!"`', src/main.rs:23:5
+    failures:
+        main
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+
+### Commanding the seams
+
+Now that we have everything we need to unit test a function that uses input and output streams, we can put our tests on one side, and keep our main program using this function normally :
+
+    // http://www.spoj.com/problems/EXPECT/
+    use std::io:: {
         stdin,
         stdout,
-        Cursor,
+        Write,
         BufRead,
         BufReader,
-        Write,
+
     };
 
     fn main() {
+
         process(&mut BufReader::new(stdin()), &mut stdout());
+        
     }
 
-    pub fn process<In,Out>(input: &mut In, output: &mut Out)
-        where In: BufRead, Out: Write
+    fn process<T:BufRead>(input : &mut T, output : &mut Write)
     {
         loop {
             let mut buffer = String::new();
@@ -523,78 +559,59 @@ Restablish the main program :
             input.read_line(&mut buffer)
                 .expect("input error");
 
-            write!(output, "{}", buffer);
+            write!(output, "{}", buffer)
+                .expect("output error");
 
-            if buffer == "42\n" {
-                break
+            if buffer == "42\n" { 
+                break 
             }
-        }
+        }   
     }
 
-Our first test: 
-
     #[cfg(test)]
-     mod main_process_should {
-         use std::io::Cursor;
-         use super::*;
-
+    mod process_should {
+        use super::*;
+        use std::io::Cursor;
+        
         #[test]
-        fn given_42_print_42_then_stop() {
-
-            let mut input = Cursor::new("42\n");
-            let mut output = Cursor::new(vec!());
-
-            process(&mut input, &mut output);
+        fn output_its_input_until_42_is_printed() {
+            let input = Cursor::new("4807\n42\n");
+            let mut output= Cursor::new(vec!());
+            process(&mut BufReader::new(input), &mut output);
             
             let result = String::from_utf8(output.into_inner())
                 .expect("incorrect utf-8");
 
-            assert_eq!(result, "42\n");
+            assert_eq!("4807\n42\n", result);
         }
+
     }
 
-A second test:
+And now we can refactor our tests, using helpers.
 
-        #[test]
-        fn given_any_input_stop_after_42() {
+    #[cfg(test)]
+    mod process_should {
+        use super::*;
+        use std::io::Cursor;
 
-            let mut input = Cursor::new("4807\n42\n");
-            let mut output = Cursor::new(vec!());
-
-            process(&mut input, &mut output);
+        fn given_expect(given : &str, expected : &str) {
+            let input = Cursor::new(given);
+            let mut output= Cursor::new(vec!());
+            process(&mut BufReader::new(input), &mut output);
             
             let result = String::from_utf8(output.into_inner())
                 .expect("incorrect utf-8");
 
-            assert_eq!(result, "4807\n42\n");
+            assert_eq!(expected, result);
         }
-
-Refactoring the tests
-
-    #[cfg(test)]
-     mod main_process_should {
-         use std::io::Cursor;
-         use super::*;
-
-         fn given_then_expect(given: &str, expected: &str) {
-             let mut input = Cursor::new(given);
-             let mut output= Cursor::new(vec!());
-     
-             process(&mut input, &mut output);
-     
-             let result = String::from_utf8(output.into_inner())
-                .expect("incorrect utf-8");
-     
-             assert_eq!(expected, &result)
-         }
+        
         #[test]
-        fn given_42_print_42_then_stop() {
-            given_then_expect("42\n","42\n");
+        fn output_42_if_only_given_42() {
+            given_expect("42\n", "42\n");
         }
         #[test]
-        fn given_any_input_stop_after_42() {
-            given_then_expect("4807\n42\n","4807\n42\n");
+        fn output_its_input_until_42_is_printed() {
+            given_expect("4807\n42\n", "4807\n42\n");
         }
+
     }
-
-Et voilà.

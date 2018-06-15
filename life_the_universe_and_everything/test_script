@@ -1,9 +1,12 @@
 # test_script
+
+# when given 42 should print 42 and then stop
 echo "42" >input
 echo "42" >expect
 cargo run <input >output
 diff expect output
 
+# when given numbers, should print them until 42 is printed
 echo "4807" >input
 echo "42"  >>input
 echo "4807" >expect

@@ -1,76 +1,30 @@
 // http://www.spoj.com/problems/EXPECT/
-use std::io:: {
-    stdin,
-    Stdin,Stdout,
-    stdout,
-    Write,
-    BufRead,
-    BufReader,
-
-};
+use std::io:: { stdin, Stdin, BufRead, BufReader, Cursor };
 
 fn main() {
-
-    process(&mut BufReader::new(stdin()), &mut stdout());
-    processp(stdin(), &mut stdout());
-    
+    process(&mut BufReader::new(Cursor::new("999999\n42\n")))
 }
 
-fn processp(input : Stdin, output : &mut Stdout) {
+fn process<T:BufRead>(input : &mut T) {
     loop {
         let mut buffer = String::new();
 
         input.read_line(&mut buffer)
             .expect("input error");
 
-        write!(output, "{}", buffer)
-            .expect("output error");
+        print!("{}", buffer);
 
-        if buffer == "42\n" { 
-            break 
+        if buffer == "42\n" {
+            break
         }
-    }   
-}
-fn process(input : &mut BufRead, output : &mut Write)
-{
-    loop {
-        let mut buffer = String::new();
-
-        input.read_line(&mut buffer)
-            .expect("input error");
-
-        write!(output, "{}", buffer)
-            .expect("output error");
-
-        if buffer == "42\n" { 
-            break 
-        }
-    }   
+    }
 }
 
 #[cfg(test)]
-mod process_should {
-    use super::*;
-    use std::io::Cursor;
+mod sample_test {
 
-    fn given_expect(given : &str, expected : &str) {
-        let input = Cursor::new(given);
-        let mut output= Cursor::new(vec!());
-        process(&mut BufReader::new(input), &mut output);
-        
-        let result = String::from_utf8(output.into_inner())
-            .expect("incorrect utf-8");
-
-        assert_eq!(expected, result);
-    }
-    
     #[test]
-    fn output_42_if_only_given_42() {
-        given_expect("42\n", "42\n");
+    fn should_show_that_addition_works() {
+        assert_eq!(2+2, 4)
     }
-    #[test]
-    fn output_its_input_until_42_is_printed() {
-        given_expect("4807\n42\n", "4807\n42\n");
-    }
-
 }

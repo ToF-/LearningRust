@@ -1,38 +1,31 @@
-# How to TDD a simple input/output program in Rust
+# How to unit test a simple input/output program in Rust.
 
-In my project of teaching myself the Rust language, I'm doing the exercises from the list of Basic Problems on the Sphere Online Judge website. 
+In my project of teaching myself the Rust language, I'm doing the exercises from the list of  [Basic Problems](https://www.spoj.com/problems/basics/) on the Sphere Online Judge website. 
 
-Here's the one that I picked : 
+Here's [the one that I picked](https://www.spoj.com/problems/EXPECT/)  : 
 
     EXPECT - Life, the Universe, and Everything (Interactive)
 
-    (from The Sphere Online Judge http://www.spoj.com/problems/EXPECT/)
-
     Your program is to use the brute-force approach in order to find the Answer to Life, the Universe, and Everything. More precisely... rewrite small numbers from input to output. Stop processing input after reading in the number 42. All numbers at input are integers of one or two digits.
 
-    Interactive Protocol
     You should communicate with Judge using standard input and output.
 
     Each time the judge will give you a number. You should rewrite this number to standard output. If this number equals 42, after rewriting your program should terminate immediately.
 
     Example
-    The example of communication.
-
     Input:
-
         3
         15
         42
 
     Output:
-
         3
         15
         42
 
-### A very simple solution
+### 1. AC in one go!
 
-This problem is very easily solved with a small Rust program:
+Here's a rust program that when submitted is greeted with an AC (meaning accepted) status:
 
     // http://www.spoj.com/problems/EXPECT/
     use std::io::stdin;
@@ -40,12 +33,9 @@ This problem is very easily solved with a small Rust program:
     fn main() {
         loop {
             let mut buffer = String::new();
-
             stdin().read_line(&mut buffer)
                 .expect("input error");
-
             print!("{}", buffer);
-
             if buffer == "42\n" {
                 break
             }
@@ -54,7 +44,7 @@ This problem is very easily solved with a small Rust program:
 
 It's an infinite loop of reading buffered input and printing it, that breaks only after a certain condition is met. 
 
-By running the program
+Here's what we get when running the program:
 
     cargo run ⏎
     4807 ⏎
@@ -64,21 +54,14 @@ By running the program
     42 ⏎
     42
 
-### The Code and Fix approach
+### 2. Code and Fix vs Test Driven approach
 we can see that it works. But this approach to programming:
 
 1. *write a program*
 2. *run it to see if it works*
 
-is convenient only work for trivial programs. What if the problem was more complicated ? Then we would very probably be caught in a nasty loop:
+is convenient only for trivial programs. What if the problem was more complicated ? Then we would very probably be caught in *this* nasty loop:
 
-1. *write the program*
-2. *run the program and look for a failure in its behavior*
-4. *find the defect at the origin of the failure*
-5. *make changes to the program in order to fix the defect*
-6. *goto 2*
-
-Note that *this* infinite loop is not exactly the way the approach is used. We should add a line that breaks the loop on certain conditions :
 
 1. *write the program*
 2.  *if really confident or tired or running out of time, then exit*
@@ -87,20 +70,19 @@ Note that *this* infinite loop is not exactly the way the approach is used. We s
 5. *make changes to the program in order to fix the defect*
 6. *goto 2*
 
-As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the program, leading to new failures in the behavior.
+Notice the exit condition.  As long as we are in this loop, we refrain to make adjustments to the structure of the code, lest we unwittingly insert new defects in the program, leading to new failures in the behavior.
 
-### The Test Driven Development approach
-What we want to do instead of this approach, is to follow the Test Driven Development approach:
+What we want to do instead of this loop, is to follow a sounder approach:
 
 1. *make a list of all the unit tests that we think our program should pass*
 2. *write an automated test for a bit of behavior of the program*
 3. *make the test pass with the simplest code that could possibly work*
-4. *refactori our code, improving legibility, expressivity and simplicity*
+4. *refactor our code, improving legibility, expressivity and simplicity*
 5. *as long as there are tests in our list, goto .2*
 
-That way, we are more confident that the program is running, and that the code has been possibly improved, when we end the loop.
+That way, we are more confident that the program is running, and that the code has been possibly improved when we end the loop.
 
-Writing automated unit tests in Rust is easy. Here's one example:
+Writing automated unit tests in Rust is easy. We just add a test section to our program:
 
     #[cfg(test)]
     mod sample_test {
@@ -109,36 +91,36 @@ Writing automated unit tests in Rust is easy. Here's one example:
         fn should_show_that_addition_works() {
             assert_eq!(2+2, 4)
         }
-
     }
 
-Here's how we run it:
+And here's how we run the test:
 
     cargo test ⏎
-      running 1 test
-    test tests::it_works ... ok
+    running 1 test
+    test sample_test::should_show_that_addition_works ... ok
 
     test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
-What tests can we think of for the program given in the `Life, the universe and everything` exercise ? Let's make a list of them:
+What tests can we think of for the program given as an exercise ?
 
 1. *(the simplest case) given the line "42" in input, the program will output "42" and then stop.*
-2. *(the most frequent case) given some numbers in input, the program will print them until a "42" has been printed, then it will stop.*
+2. *(the most frequent case) given some numbers in input, the program will print each of them, until a "42" is given, then it will print 42, then it will stop.*
 
-With these tests in mind, we can start again writing our program. 
+We could argue that the case where the input is not numeric should be added, but after all, that's not part of the spec. So, with these tests in mind, we can write our program again, using the TDD aproach.
 
-### Testing input and output : a workaround
-But then we meet our first difficulty: how do we program a unit test to check what the output of program is, given a specific input ? Good unit tests in TDD are tests that respect the F.I.R.S.T criteria:
+### 4. Testing input and output : a workaround
 
-- Fast, meaning that manually entering input won't work very well.
-- Indepedent, meaning that each test should be executing without having an effect on the execution of others tests.
-- Repeatable, which holds only if we take great care of repeating the manual entries without errors. 
-- Self-validating, which can't hold if we content ourselves with visually validating the output.
-- Timely, meaning we can write each test before writing the part of the program that makes the test pass.
+Or can we? The macro `assert_eq` allows us to compare two expressions, but it can't possibly help us in asserting that a *sequence of events happened*, and happened on the standard input and output flow, for that matter.
 
-For our tests to be self-validating and repeatable, we can replace manual input with some input data stored in a text file, and then automatically compare the output with some data stored in another text file. Command line tools allow us to do that. Let's create a *test_script* file and run it:
- 
+The TDD approach states that the unit tests we create should be fast, independant, repeatable, self-validating and timely (i.e. each written before the code that makes it pass). 
+  
+For our tests to be self-validating and repeatable, we can replace manual input with some numbers stored in a text file, and then automatically compare the output of our program with some expected results stored in another text file. It's a very convenient way to test, since our rust program is running on an OS where having text files replace standard input and output is easy, as is comparing text files.
+
+Here's a little script doing that for us:
+
     # test_script
+
+    # when given 42 should print 42 and then stop
     echo "42" >input
     echo "42" >expect
     cargo run <input >output
@@ -147,10 +129,11 @@ For our tests to be self-validating and repeatable, we can replace manual input 
     chmod +x test_script ⏎
     ./test_script ⏎
     
-The absence of *diff* output means that the test is passing.
+`diff` will display the differences between the output and the exepected result if any. The absence of any *diff* output means that the test is passing.
 
 Let's have this test execute and fail:
 
+    
     // http://www.spoj.com/problems/EXPECT/
 
     fn main() {
@@ -170,14 +153,19 @@ We can make the test pass with a single change:
 
     ./test_script  ⏎
 
+Silent diff! Our test passes.
+
 Let's add our second test:
 
     # test_script
+
+    # when given 42 should print 42 and then stop
     echo "42" >input
     echo "42" >expect
     cargo run <input >output
     diff expect output
 
+    # when given numbers, should print them until 42 is printed
     echo "4807" >input
     echo "42"  >>input
     echo "4807" >expect
@@ -189,7 +177,9 @@ Let's add our second test:
     1d0
     < 4807
 
-And now we can make it pass with the version we wrote previously:
+The diff output signals that 4807 was expected, but not present in the result.
+
+Let's make this second test pass, with our initial version of the program:
  
     // http://www.spoj.com/problems/EXPECT/
 
@@ -210,40 +200,68 @@ And now we can make it pass with the version we wrote previously:
         }   
     }
 
-    ./test_script  ⏎
+   ./test_script  ⏎
 
-### Using seams to test input/output code
-This technique could work for a while, but a test written this way  has several limitations :
+Ok! Our program is complete, and well tested, at least on the cases that matter to us.
 
-- It's not really independent, since it relies on the file system.
-- It's not really self-validating, since the testing mechanism is not coded in Rust.
-- It works only for standard input/output programs.
-- It could become very slow given a large amount of input data.
+### 5. But, you're not using unit test in Rust ?
 
-Instead of building such scaffolding around the program, we would prefer to write simple tests in Rust itself, that check bits of functionality, not the whole program each time.
+This technique could work for a while, but tests written this way  has several limitations :
 
-For that to happen, we need to be able to:
+- They maybe fast in execution, but writing them is tedious.
+- They are not really independant, since they rely on the file system.
+- They are not really self-validating, since they are not coded in Rust.
+- They work only for a program that uses standard input and outputs.
 
-- substitute the real input stream with an object in memory that we can initialize to some values.
-- substitute the real output stream with an object that we can inspect and compare to our expected values.
+Instead of building such scaffolding around the program, we would rather write simple tests in Rust itself, tests that do not rely on any file, that check bits of functionality, and eventually do not necessarily involve running the whole program each time.
 
-In other words, we need *seams* to the input and output streams that our central loop is using. And we need to *command* these seams in our tests (setting the input and output streams to our objects before calling the function) and in the main program (setting the input and output streams to standard input and output).
+So we are back at our initial problem: how do we test that something has happened on the output stream, because of something we forced on the input stream?
 
-## Creating a seam on the input stream
+The answer is: we don't. Instead we do exactly as we did with the scaffolding script : 
+- substitute the real input stream with an object in memory that we can initialize to some values
+- substitute the real output stream with an object that we can later inspect and compare to our expected values
+
+In other words, we create *seams* on the input and output streams that are used by our central loop. Then we create *commands* on those seams, giving us the ability to switch from memory object to the real stream depending on the configuration : 
+- our main program should set the seams to the standard input and output
+- our tests should set the seams to object in memory.
+
+The questions is: what kind of objects do we need ?
+
+## 6. Creating a seam on the input stream
 
 Since we want to create seams for the input stream and the output stream, and to be able to command these seams from either the main function of our program, or from a test case, we first need to extract the function that will have the seams as parameters.
 
-Let's start with the input stream. Rust documentation says that `pub fn stdin() -> Stdin` so let's make it an argument:
-
-    use std::io:: {
-        stdin,
-        Stdin 
-        };
+    use std::io::stdin;
 
     fn main() {
-        
-        process(stdin());
+        process()
+    }
 
+    fn process() {
+        loop {
+            let mut buffer = String::new();
+
+            stdin().read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+    ./test_script ⏎
+    
+The silent diff tells us that this refactoring very probably didn't alter the behavior of the program.
+    
+Let's start with input stream, make stdin() an actual parameter for the `process` function.
+
+    use std::io:: { stdin, Stdin };
+
+    fn main() {
+        process(stdin())
     }
 
     fn process(input : Stdin) {
@@ -255,13 +273,100 @@ Let's start with the input stream. Rust documentation says that `pub fn stdin() 
 
             print!("{}", buffer);
 
-            if buffer == "42\n" { 
-                break 
+            if buffer == "42\n" {
+                break
             }
-        }   
+        }
     }
-    
+
     ./test_script  ⏎
+
+### 7. Substituting a buffer to the input stream.
+
+Let's try, for the sake of experimenting, to substitute the input stream with an object in memory, namingly, a buffer containing some hard-coded string.
+
+We know that `Stdin` implements the `Read` trait. Can we substitute our parameter  with an object that would also implement this trait ? Basically what we need is an object in memory that would implement the `read_line` method. Classes that implement the trait `BufRead` have a `read_line` method. One of them is `BufReader`. Here's an example of using one:
+
+    use std::io::BufReader;
+    use std::fs::File;
+
+    fn main() -> std::io::Result<()> {
+        let f = File::open("log.txt")?;
+        let reader = BufReader::new(f);
+        Ok(())
+    }
+
+This is exactly what we need! So let's try it:
+
+    use std::io:: { stdin, Stdin, BufRead, BufReader };
+
+    fn main() {
+        process(&mut BufReader::new(stdin()))
+    }
+
+    fn process<T:BufRead>(input : &mut T) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+We have changed the `process` function so that it can take a value of any type that implements the trait `BufRead`. We have a seam on our input stream parameter. And our tests still pass.
+
+Let's try substituting a hardcoded string in lieu of the standard input stream: to that effect, we just need to replace `stdin()` with an object of a class implementing the `Read` trait, that would allow for referencing a string. `Cursor` is such a class:
+
+    A Cursor wraps another type and provides it with a Seek implementation.
+
+    Cursors are typically used with in-memory buffers to allow them to implement Read and/or Write, allowing these buffers to be used anywhere you might use a reader or writer that does actual I/O.
+
+    The standard library implements some I/O traits on various types which are commonly used as a buffer, like Cursor<Vec<u8>> and Cursor<&[u8]>. 
+
+Can we use a Cursor on a hardcoded string ? Let's try:
+
+    use std::io:: { stdin, Stdin, BufRead, BufReader, Cursor };
+
+    fn main() {
+        process(&mut BufReader::new(Cursor::new("999999\n42\n")))
+    }
+
+    fn process<T:BufRead>(input : &mut T) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            print!("{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+And now running the tests 
+
+    ./test_script ⏎
+
+    0a1
+    > 999999
+
+    1c1
+    < 4807
+    ---
+    > 999999
+
+reveal that the first diff found 999999 as a surplus, and the second one, that 999999 came up where 4807 was expected.  
+
+It worked! We can now command the seam to represent either a hardcoded string, or the standard input buffer. 
 
 ### Creating a seam on output
 

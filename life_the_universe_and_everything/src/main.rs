@@ -1,8 +1,9 @@
 // http://www.spoj.com/problems/EXPECT/
-use std::io:: { stdin, Stdin, BufRead, BufReader, Cursor };
+use std::io:: { stdin, BufRead, BufReader, 
+                stdout, Write };
 
 fn main() {
-    process(&mut BufReader::new(Cursor::new("999999\n42\n")))
+    process(&mut BufReader::new(stdin()))
 }
 
 fn process<T:BufRead>(input : &mut T) {
@@ -12,7 +13,7 @@ fn process<T:BufRead>(input : &mut T) {
         input.read_line(&mut buffer)
             .expect("input error");
 
-        print!("{}", buffer);
+        write!(stdout(), "{}", buffer);
 
         if buffer == "42\n" {
             break

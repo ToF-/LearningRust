@@ -332,7 +332,7 @@ Let's try substituting a hardcoded string in lieu of the standard input stream: 
 
 Can we use a Cursor on a hardcoded string ? Let's try:
 
-    use std::io:: { stdin, Stdin, BufRead, BufReader, Cursor };
+    use std::io:: { stdin, BufRead, BufReader };
 
     fn main() {
         process(&mut BufReader::new(Cursor::new("999999\n42\n")))
@@ -368,3 +368,33 @@ And now running the tests
 reveal that the first diff found 999999 as a surplus, and the second one, that 999999 came up where 4807 was expected.  
 
 It worked! We can now command the seam to represent either a hardcoded string, or the standard input buffer. 
+
+### 8. Creating a seam on the output stream
+   
+Creating the seam for the output stream is a bit more indirect, as the `print!` macro makes this output stream invisible. `print!` can be replaced with the `write!` macro. 
+
+
+    // http://www.spoj.com/problems/EXPECT/
+    use std::io:: { stdin, BufRead, BufReader, 
+                    stdout, Write };
+
+    fn main() {
+        process(&mut BufReader::new(stdin()))
+    }
+
+    fn process<T:BufRead>(input : &mut T) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(stdout(), "{}", buffer);
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+

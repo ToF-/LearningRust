@@ -130,7 +130,7 @@ Here's a little script doing that for us:
     chmod +x test_script ⏎
     ./test_script ⏎
     
-`diff` will display the differences between the output and the exepected result if any. The absence of any *diff* output means that the test is passing.
+`diff` will display the differences between the output and the expected result if any. The absence of any *diff* output means that the test is passing.
 
 Let's have this test execute and fail:
 
@@ -420,7 +420,7 @@ Now we make `stdout()` a parameter value for the `process` function. The documen
         }
     }
 
-### Substituting a buffer to stdout()
+### 9. Substituting a buffer to stdout()
 
 Now we can use a `Cursor` initialized with a `vec` in the place of  `stdout()`, 
 
@@ -445,7 +445,7 @@ And now, running the test reveals that the program didn't print anything:
 since the output is now written in a Cursor instead of the standard output.
 
 
-### Writing automated test with the seams
+### 10. Writing automated test with the seams
 
 Now that we know we can manipulate seams, we can use them for testing. The idea is to :
 
@@ -538,7 +538,7 @@ And now we can refactor our tests, using helpers.
 
     }
 
-### Conclusion
+### 11. Conclusion
 
 What we have done here:
 

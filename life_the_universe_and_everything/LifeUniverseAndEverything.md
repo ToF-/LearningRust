@@ -371,8 +371,7 @@ It worked! We can now command the seam to represent either a hardcoded string, o
 
 ### 8. Creating a seam on the output stream
    
-Creating the seam for the output stream is a bit more indirect, as the `print!` macro makes this output stream invisible. `print!` can be replaced with the `write!` macro. 
-
+Creating the seam for the output stream is a bit more indirect, as the `print!` macro makes this output stream implicit. Let's make it explicit by replacing `print!` with it's `write!` equivalent.
 
     // http://www.spoj.com/problems/EXPECT/
     use std::io:: { stdin, BufRead, BufReader, 
@@ -389,7 +388,8 @@ Creating the seam for the output stream is a bit more indirect, as the `print!` 
             input.read_line(&mut buffer)
                 .expect("input error");
 
-            write!(stdout(), "{}", buffer);
+            write!(stdout(), "{}", buffer)
+                .expect("output error");
 
             if buffer == "42\n" {
                 break
@@ -397,4 +397,153 @@ Creating the seam for the output stream is a bit more indirect, as the `print!` 
         }
     }
 
+Now we make `stdout()` a parameter value for the `process` function. The documentation says that this macro is typically used with a buffer of `&mut Write` so let's use that:
 
+    fn main() {
+        process(&mut BufReader::new(stdin()),
+                &mut stdout());
+    }
+
+    fn process<T:BufRead>(input : &mut T, output : &mut Write) {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(output, "{}", buffer)
+                .expect("output error");
+
+            if buffer == "42\n" {
+                break
+            }
+        }
+    }
+
+### Substituting a buffer to stdout()
+
+Now we can use a `Cursor` initialized with a `vec` in the place of  `stdout()`, 
+
+    // http://www.spoj.com/problems/EXPECT/
+    use std::io:: { stdin, BufRead, BufReader, 
+                    stdout, Write, Cursor };
+
+    fn main() {
+        process(&mut BufReader::new(stdin()),
+                &mut Cursor::new(vec!()));
+    }
+
+And now, running the test reveals that the program didn't print anything:
+
+1d0
+< 42
+
+1,2d0
+< 4807
+< 42
+
+since the output is now written in a Cursor instead of the standard output.
+
+
+### Writing automated test with the seams
+
+Now that we know we can manipulate seams, we can use them for testing. The idea is to :
+
+1. set up an input buffer with a hard coded string, e.g. `"4807\n42\n"`
+2. set up the output buffer to a new `Vec` 
+3. call our `process` function with these parameters
+4. get the content of the output buffer
+5. compare this content with an expected result (here `"4807\n42\n"`) 
+
+Step 4  is done using  `into_inner()` to access the inner representation of the buffer, and `from_utf8` to convert the utf-8 codes into a standard string.
+
+
+    // http://www.spoj.com/problems/EXPECT/
+    use std::io:: {
+        stdin,
+        stdout,
+        Write,
+        BufRead,
+        BufReader,
+
+    };
+
+    fn main() {
+
+        process(&mut BufReader::new(stdin()), &mut stdout());
+
+    }
+
+    fn process<T:BufRead>(input : &mut T, output : &mut Write)
+    {
+        loop {
+            let mut buffer = String::new();
+
+            input.read_line(&mut buffer)
+                .expect("input error");
+
+            write!(output, "{}", buffer)
+                .expect("output error");
+
+            if buffer == "42\n" { 
+                break 
+            }
+        }   
+    }
+
+    #[cfg(test)]
+    mod process_should {
+        use super::*;
+        use std::io::Cursor;
+
+        #[test]
+        fn output_its_input_until_42_is_printed() {
+            let input = Cursor::new("4807\n42\n");
+            let mut output= Cursor::new(vec!());
+            process(&mut BufReader::new(input), &mut output);
+
+            let result = String::from_utf8(output.into_inner())
+                .expect("incorrect utf-8");
+
+            assert_eq!("4807\n42\n", result);
+        }
+    }
+
+And now we can refactor our tests, using helpers.
+
+    #[cfg(test)]
+    mod process_should {
+        use super::*;
+        use std::io::Cursor;
+
+        fn given_expect(given : &str, expected : &str) {
+            let input = Cursor::new(given);
+            let mut output= Cursor::new(vec!());
+            process(&mut BufReader::new(input), &mut output);
+            
+            let result = String::from_utf8(output.into_inner())
+                .expect("incorrect utf-8");
+
+            assert_eq!(expected, result);
+        }
+        
+        #[test]
+        fn output_42_if_only_given_42() {
+            given_expect("42\n", "42\n");
+        }
+        #[test]
+        fn output_its_input_until_42_is_printed() {
+            given_expect("4807\n42\n", "4807\n42\n");
+        }
+
+    }
+
+### Conclusion
+
+What we have done here:
+
+- creating seams on the input and output streams of our program
+- creating commands on these seams to switch them from standard I/O to Cursors
+- writing unit tests using our Cursor-based streams as mock
+
+allows us to create more sophisticated programs with the TDD approach. Of course, designing our program only through unit tests on the I/O level is not a panacea: for more complex program, we would need to have tests on the level of our domain objects and functions, not only on I/O. 
